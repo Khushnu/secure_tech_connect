@@ -224,52 +224,17 @@ void _showTextSequentially() {
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        // height: context.screenHeight * 0.2,
-                        width: context.screenWidth * 0.4,
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                          // color: Colors.amber, 
-                          border: Border.all(color: Colors.grey.withValues(alpha: 0.5))
-                        ),
-                        child: Column(
-                          spacing: 10,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                             Transform.translate(
-                              offset: Offset(0, -11),
-                               child: Container(
-                                color: primaryBgColor,
-                                child: TextWidget(text: "Computer Info", fontWeight: FontWeight.bold,),
-                               ),
-                             ), 
-                    
-                            InfoWidget(title: "Computer Name", value: computerName),
-                            InfoWidget(title: "Ip Address", value: ipAddress),
-                            InfoWidget(title: "OS Platform", value: osName),
-                            InfoWidget(title: "Os Version", value: osVersion),
-                            InfoWidget(title: "Physical Memory", value: physicalMemory),
-                            InfoWidget(title: "Date:", value: currentTime),
-                             SizedBox(
-                              height: 10,
-                             )
-                          ],
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-              ),
-            ), 
-              SizedBox(
-                              height: 10,
-                             ),
-             Expanded(
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Row(
+                      spacing: 10,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Flexible(
                           child: Container(
-                            // height: context.screenHeight * 0.3 ,
+                            height: context.screenHeight * 0.4 - 10,
                             // width: context.screenWidth * 0.5,
                             padding: EdgeInsets.symmetric(horizontal: 10),
 
@@ -292,6 +257,48 @@ void _showTextSequentially() {
                             ),
                           ),
                         ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            // height: context.screenHeight * 0.2,
+                            width: context.screenWidth * 0.4,
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              // color: Colors.amber, 
+                              border: Border.all(color: Colors.grey.withValues(alpha: 0.5))
+                            ),
+                            child: Column(
+                              spacing: 10,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                 Transform.translate(
+                                  offset: Offset(0, -11),
+                                   child: Container(
+                                    color: primaryBgColor,
+                                    child: TextWidget(text: "Computer Info", fontWeight: FontWeight.bold,),
+                                   ),
+                                 ), 
+                        
+                                InfoWidget(title: "Computer Name", value: computerName),
+                                InfoWidget(title: "Ip Address", value: ipAddress),
+                                InfoWidget(title: "OS Platform", value: osName),
+                                InfoWidget(title: "Os Version", value: osVersion),
+                                InfoWidget(title: "Physical Memory", value: physicalMemory),
+                                InfoWidget(title: "Date:", value: currentTime),
+                                 SizedBox(
+                                  height: 10,
+                                 )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+              ),
+            ), 
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(

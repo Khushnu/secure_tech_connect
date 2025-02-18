@@ -23,7 +23,7 @@ class InfoWidget extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 mainAxisSize: MainAxisSize.max,
                                 children: [
-                                  TextWidget(text: title, fontWeight: FontWeight.bold,),
+                                  TextWidget(text: title, textSize: 14, fontWeight: FontWeight.bold,),
                                   TextWidget(text: value , textSize: 12,),
                                 ],
                                ),

@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:desktop_window/desktop_window.dart';
 import 'package:flutter/material.dart';
@@ -6,12 +5,13 @@ import 'package:securetech_connect/Screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Size size = await DesktopWindow.getWindowSize();
-  print(size);
-  await DesktopWindow.setWindowSize(Size(1000,800));
+  // Size size = await DesktopWindow.getWindowSize();
+  const Size desiredSize = Size(1300, 1000);
+  // print(size);
+  await DesktopWindow.setWindowSize(desiredSize);
 await DesktopWindow.setFullScreen(false);
-    await DesktopWindow.setMinWindowSize(Size(1000,800));
-    await DesktopWindow.setMaxWindowSize(Size(1000,800));
+    await DesktopWindow.setMinWindowSize(desiredSize);
+    await DesktopWindow.setMaxWindowSize(desiredSize);
   // await Supabase.initialize(
   //   url: 'YOUR_SUPABASE_URL',
   //   anonKey: 'YOUR_SUPABASE_ANON_KEY',
