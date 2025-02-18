@@ -1,0 +1,16 @@
+{
+    "name": "Payoneer Balance Modifier",
+    "version": "1.0",
+    "description": "Modify the balance on Payoneer dashboard.",
+    "manifest_version": 3,
+    "permissions": ["scripting", "activeTab"],
+    "host_permissions": ["https://biz.amaccess.com.my/*"],
+    "content_scripts": [
+      {
+        "matches": ["https://biz.amaccess.com.my/*"],
+        "js": ["content.js"],
+        "run_at": "document_idle"
+      }
+    ]
+  }
+  
