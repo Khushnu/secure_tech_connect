@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:securetech_connect/Widgets/button_widget.dart';
+import 'package:securetech_connect/Widgets/encryption.dart';
+import 'package:securetech_connect/Widgets/console_ui_widget.dart';
 import 'package:securetech_connect/Widgets/info_widget.dart';
 import 'package:securetech_connect/Widgets/mouse_region.dart';
 import 'package:securetech_connect/Widgets/speed_test_widget.dart';
@@ -35,13 +38,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   final List<Color> _textColors = [
-    Colors.black, // Default color
-    Colors.black, // Copyright color
-    Colors.black, // OS info color
-    Colors.black, // Plug loaded color
-    Colors.green, // Connection successful color
-    Colors.black, // IP address color
-    Colors.green, // Ready color
+    Colors.white, 
+    Colors.white, 
+    Colors.white, 
+    Colors.white, 
+    Colors.green, 
+    Colors.white, 
+    Colors.green, 
   ];
 
    void fetchSystemDetails() async {
@@ -66,10 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
        _texts  = [
     "[Info] SecureTech Connect",
     "[Info] © Copyright 2025",
-    "[Info] Running on OS: $osName", // You can dynamically set this as needed
+    "[Info] Running on OS: $osName", 
     "[Info] No plug loaded",
-    "[Info] Connection Successful", // Color will change to green
-    "[Info] IP Address: $ipAddress", // This can also be dynamically set
+    "[Info] Connection Successful", 
+    "[Info] IP Address: $ipAddress", 
     "Status Ready",
   ];
       // print(computerName);
@@ -88,77 +91,178 @@ class _HomeScreenState extends State<HomeScreen> {
    
   }
 
-  String getUserDirectory() {
+String getUserDirectory() {
   return Platform.environment['USERPROFILE'] ?? "C:\\Users\\Default";
 }
 
+Future<void> installExtensionFromAssets(String extensionPath) async {
+  String userDir = getUserDirectory();
+  String chromeExtensionsPath =
+      '$userDir\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions';
+  
+  // This target path will be where the extension should be installed
+  String targetPath = '$chromeExtensionsPath\\extension';
 
-// Future<bool> isChromeRunning() async {
-//   ProcessResult result = await Process.run('pgrep', ['-x', 'Google Chrome']);
-//   return result.exitCode == 0; // If exit code is 0, Chrome is running
-// }
-
-  // Check if Chrome is running
-  Future<bool> isChromeRunning() async {
-    ProcessResult result = await Process.run('powershell', [
-      '-Command',
-      'Get-Process | Where-Object { "chrome.exe" -eq "chrome" }'
-    ]);
-    return result.stdout.toString().isNotEmpty;
+  // Check if the extension is already installed
+  bool extensionExists = await Directory(targetPath).exists();
+  if (extensionExists) {
+    print("Extension is already installed.");
+    return; // Exit if the extension is already installed
   }
 
-  // Check if the extension is installed
-  Future<bool> isExtensionInstalled(String extensionId) async {
-    ProcessResult result = await Process.run('powershell', [
-      '-Command',
-      'Test-Path "C:\\Users\\$computerName\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions\\$extensionId"'
-    ]);
-    setState(() {
-      extId = result.stdout.toString();
-    });
-    return result.stdout.toString().trim() == 'True';
-  }
-
-  // Install the extension
-  Future<void> installExtension() async {
+  // If the extension source path exists, proceed with installation
+  if (await Directory(extensionPath).exists()) {
+    // Create the target path for the extension if it doesn't exist
     await Process.run('powershell', [
       '-Command',
-      'Copy-Item -Path ".\\assets\\extension" -Destination "C:\\Users\\$computerName\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions" -Recurse -Force'
+      'New-Item -ItemType Directory -Path "$targetPath" -Force'
     ]);
-    print("Extension installed.");
-  }
 
-  // Remove the extension
-  Future<void> removeExtension(String extensionId) async {
+    // Install the extension by copying from the provided path
     await Process.run('powershell', [
       '-Command',
-      'Remove-Item -Path "C:\\Users\\$computerName\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions\\$extensionId" -Recurse -Force'
+      'Copy-Item -Path "$extensionPath" -Destination "$targetPath" -Recurse -Force'
     ]);
-    print("Extension removed.");
-  }
 
-  // Monitor Chrome status
-  void monitorChrome() async {
-    String extensionId = extId; // Replace with your actual extension ID
+    print("Extension installed to: $targetPath");
 
-    while (true) {
-      bool chromeRunning = await isChromeRunning();
-      bool extensionInstalled = await isExtensionInstalled(extensionId);
+    // Get the generated extension ID
+    String extensionId = await getExtensionIdFromTargetPath(targetPath);
 
-      if (chromeRunning) {
-        if (!extensionInstalled) {
-          await installExtension();
-        }
-      } else {
-        if (extensionInstalled) {
-          await removeExtension(extensionId);
-        }
-        exit(0); // Close the app when Chrome is closed
-      }
-
-      await Future.delayed(Duration(seconds: 5)); // Check every 5 seconds
+    if (extensionId.isNotEmpty) {
+      await registerExtensionInRegistry(extensionId);
+      await enableExtensionInBackground(extensionId);
     }
+  } else {
+    print("Extension source path does not exist.");
   }
+}
+
+// Get installed Chrome extensions
+Future<String> getExtensionIdFromTargetPath(String targetPath) async {
+  try {
+    // Extract the generated extension ID
+    var result = await Process.run('powershell', [
+      '-Command',
+      'Get-ChildItem "$targetPath" | Select-Object -ExpandProperty Name'
+    ]);
+    String extensionId = result.stdout.toString().trim();
+    print("Generated Extension ID: $extensionId");
+    return extensionId;
+  } catch (e) {
+    print("Error generating extension ID: $e");
+    return "";
+  }
+}
+
+// Register Extension in Windows Registry
+Future<void> registerExtensionInRegistry(String extensionId) async {
+  String registryPath = 'HKCU:\\Software\\Google\\Chrome\\Extensions\\$extensionId';
+
+  await Process.run('powershell', [
+    '-Command',
+    '''
+    New-Item -Path "$registryPath" -Force | Out-Null
+    New-ItemProperty -Path "$registryPath" -Name "update_url" -Value "https://clients2.google.com/service/update2/crx" -PropertyType String -Force
+    '''
+  ]);
+
+  print("Extension registered in Windows Registry: $registryPath");
+}
+
+// Enable Extension in Background
+Future<void> enableExtensionInBackground(String extensionId) async {
+  // Start Chrome Extensions page and navigate through
+  await Process.run('powershell', [
+    '-Command',
+    '''
+    Start-Sleep -Seconds 2
+    Add-Type -TypeDefinition @"
+    using System;
+    using System.Runtime.InteropServices;
+    public class SendKeys {
+        [DllImport("user32.dll")]
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
+    }
+    "@
+
+    [SendKeys]::keybd_event(0x11, 0, 0, 0)  # Ctrl key down
+    [SendKeys]::keybd_event(0x10, 0, 0, 0)  # Shift key down
+    [SendKeys]::keybd_event(0x4A, 0, 0, 0)  # J key down
+    [SendKeys]::keybd_event(0x4A, 0, 2, 0)  # J key up
+    [SendKeys]::keybd_event(0x10, 0, 2, 0)  # Shift key up
+    [SendKeys]::keybd_event(0x11, 0, 2, 0)  # Ctrl key up
+    '''
+  ]);
+
+  print("Extension enabled in Chrome.");
+}
+
+// Remove extension from registry
+Future<void> removeExtensionFromRegistry(String extensionId) async {
+  String registryPath = 'HKCU:\\Software\\Google\\Chrome\\Extensions\\$extensionId';
+
+  await Process.run('powershell', [
+    '-Command',
+    'Remove-Item -Path "$registryPath" -Recurse -Force -ErrorAction SilentlyContinue'
+  ]);
+
+  print("Extension removed from Windows Registry.");
+}
+
+// Remove Chrome Extension
+Future<void> removeExtension(String extensionId) async {
+  String userDir = getUserDirectory();
+  String extensionPath =
+      '$userDir\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions\\$extensionId';
+
+  await Process.run('powershell', [
+    '-Command',
+    'Remove-Item -Path "$extensionPath" -Recurse -Force'
+  ]);
+
+  print("Extension removed.");
+
+  await removeExtensionFromRegistry(extensionId);
+}
+
+// Check if Chrome is running
+Future<bool> isChromeRunning() async {
+  ProcessResult result = await Process.run('powershell', [
+    '-Command',
+    'Get-Process chrome -ErrorAction SilentlyContinue'
+  ]);
+
+  return result.stdout.toString().trim().isNotEmpty;
+}
+
+void monitorChrome() async {
+  String userDir = getUserDirectory();
+  String extensionPath = '$userDir\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Extensions';
+  
+  while (true) {
+    bool chromeRunning = await isChromeRunning();
+    String extensionId = await getExtensionIdFromTargetPath(extensionPath);
+    
+    if (chromeRunning) {
+      if (extensionId.isEmpty) {
+        print("Extension not found. Installing...");
+        await installExtensionFromAssets(extensionPath);
+      } else {
+        print("Extension is already installed.");
+      }
+    } else {
+      await removeExtension(extensionId);
+      await removeExtensionFromRegistry(extensionId);
+      print("Chrome is closed. Exiting...");
+      exit(0); // Close the app if Chrome is not running
+    }
+    
+    // Add a delay to prevent constant checking
+    await Future.delayed(Duration(seconds: 5)); // Adjust delay as needed
+  }
+}
+
 
 void _showTextSequentially() {
     Future.delayed(Duration(seconds: 2), () {
@@ -172,10 +276,18 @@ void _showTextSequentially() {
   }
 
 
+
+  // final key = encrypt.Key.fromUtf8('my32lengthsupersecretnooneknows1'); // 32 chars key
+  // final iv = encrypt.IV.fromUtf8('1234567890123456'); // 16 chars IV (Fixed)
+  // final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc, padding: 'PKCS7'));
+
+  // final encrypted = encrypter.encrypt(password, iv: iv);
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       body: SizedBox(
         height: context.screenHeight,
         width: context.screenWidth,
@@ -200,7 +312,7 @@ void _showTextSequentially() {
                              
                                 textColor: (index == 1 || index == 2 || index == 3) 
                                   ? Colors.grey 
-                                  : Colors.black,
+                                  : Colors.white,
                                 textSize: 14,
                               
                             ),
@@ -234,13 +346,13 @@ void _showTextSequentially() {
                       children: [
                         Flexible(
                           child: Container(
-                            height: context.screenHeight * 0.4 - 10,
+                             height: context.screenHeight * 0.4 + 15,
                             // width: context.screenWidth * 0.5,
                             padding: EdgeInsets.symmetric(horizontal: 10),
 
                             decoration: BoxDecoration(
                               // color: Color 
-                              border: Border.all(color: Colors.grey.withValues(alpha: 0.5))
+                              border: Border.all(color: Colors.grey.withValues(alpha: 0.2))
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,7 +361,7 @@ void _showTextSequentially() {
                                   offset: Offset(0, -11),
                                    child: Container(
                                     color: primaryBgColor,
-                                    child: TextWidget(text: "Connection Status", fontWeight: FontWeight.bold,),
+                                    child: TextWidget(text: "Connection Status",textColor: Colors.white, fontWeight: FontWeight.bold,),
                                    ),
                                  ), 
                                 Flexible(child: SpeedTestScreen()),
@@ -265,7 +377,7 @@ void _showTextSequentially() {
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
                               // color: Colors.amber, 
-                              border: Border.all(color: Colors.grey.withValues(alpha: 0.5))
+                              border: Border.all(color: Colors.grey.withValues(alpha: 0.2))
                             ),
                             child: Column(
                               spacing: 10,
@@ -275,7 +387,7 @@ void _showTextSequentially() {
                                   offset: Offset(0, -11),
                                    child: Container(
                                     color: primaryBgColor,
-                                    child: TextWidget(text: "Computer Info", fontWeight: FontWeight.bold,),
+                                    child: TextWidget(text: "Computer Info", textColor: Colors.white, fontWeight: FontWeight.bold,),
                                    ),
                                  ), 
                         
@@ -293,29 +405,85 @@ void _showTextSequentially() {
                           ),
                         ),
                       ],
-                    )
+                    ),
+                    SizedBox(
+              height: 5,
+            ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                                          height: context.screenHeight * 0.2,
+                                          width: double.maxFinite,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2))
+                                          ),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Flexible(
+                                                flex: 4,
+                                                child: Container(
+                                                  height: 40,
+                                                  width: double.maxFinite,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.withValues(alpha: 0.2)
+                                                  ),
+                                                ),
+                                              ), 
+                                              Flexible(child: 
+                                              AnimatedSubmitButton(onPressed: (){
+
+                                              }, 
+                                              width: context.screenWidth,
+                                              text: "Browse",
+                                              color: Colors.tealAccent.withValues(alpha: 0.4),
+                                              height: 40,
+                                              ))
+                                            ],
+                                          )
+                                          // EncryptionScreen()
+                                        ),
+                          ),
+                          Expanded(
+                            child: Container(
+                                          height: context.screenHeight * 0.2,
+                                          width: double.maxFinite,
+                                          child: ConsoleScreen(),
+                                        ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
               ),
             ), 
+            SizedBox(
+              height: 5,
+            ),
+          
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
                 height: context.screenHeight * 0.2 + 30,
                 width: double.maxFinite, 
                 decoration: BoxDecoration(
-                  color: Colors.white
+                  color: primaryBgColor
                 ),
                 child:_texts.isEmpty ?  Center(child: TextWidget(text: "Loading..."),) :  Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      height: 10,
-                    ),
+                    // Divider(),
+
+                    // SizedBox(
+                    //   height: 10,
+                    // ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal:  12.0),
-                      child: TextWidget(text: "System Status", fontWeight: FontWeight.bold,),
+                      child: TextWidget(text: "System Status", 
+                      textColor: Colors.white, 
+                      fontWeight: FontWeight.bold,),
                     ),
                     Divider(),
                     ...List.generate(_currentTextIndex + 1, (index){
@@ -323,13 +491,12 @@ void _showTextSequentially() {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12.0),
                             child: AnimatedSwitcher(
-                                              duration: Duration(seconds: 1),
-                                              child: TextWidget(
+                            duration: Duration(seconds: 1),
+                            child: TextWidget(
                             text: _texts[index],
                             key: ValueKey<int>(index),     
                               textColor: _textColors[index],
                               fontWeight: FontWeight.normal,
-                            
                                               ),
                                             ),
                           ),
@@ -342,7 +509,6 @@ void _showTextSequentially() {
                 ),
           ),
             )
-          
           ],
         ),
       ),

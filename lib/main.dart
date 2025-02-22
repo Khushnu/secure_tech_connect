@@ -2,12 +2,13 @@
 import 'package:desktop_window/desktop_window.dart';
 import 'package:flutter/material.dart';
 import 'package:securetech_connect/Screens/home_screen.dart';
+import 'package:securetech_connect/Screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Size size = await DesktopWindow.getWindowSize();
-  const Size desiredSize = Size(1300, 1000);
-  // print(size);
+  const Size desiredSize = Size(1200, 950);
+  print(desiredSize);
   await DesktopWindow.setWindowSize(desiredSize);
 await DesktopWindow.setFullScreen(false);
     await DesktopWindow.setMinWindowSize(desiredSize);
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      home: LoginScreen(),
     );
   }
 }

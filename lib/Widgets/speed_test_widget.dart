@@ -86,17 +86,28 @@ class _SpeedTestScreenState extends State<SpeedTestScreen> {
                     height: context.screenHeight * 0.3,
                     width: context.screenWidth,
                   child: SfCartesianChart(
+                    plotAreaBorderWidth: 0,
+                    plotAreaBackgroundColor: Colors.transparent,
+                    borderWidth: 0,
                     primaryXAxis: NumericAxis(
-                      title: AxisTitle(text: 'Time (seconds)', textStyle: TextStyle(fontSize: 10)),
+                      majorGridLines: MajorGridLines(width: 0),
+                      borderColor: Colors.transparent,
+                      labelStyle: TextStyle(color: Colors.transparent),
+                      placeLabelsNearAxisLine: false,
+                      title: AxisTitle(text: 'Time (seconds)', textStyle: TextStyle(fontSize: 10, color: Colors.white)),
                       interval: 1,
                     ),
                     primaryYAxis: NumericAxis(
-                      title: AxisTitle(text: 'Speed (Mbps)', textStyle: TextStyle(fontSize: 10)),
+                      majorGridLines: MajorGridLines(width: 0),
+                      borderColor: Colors.transparent,
+                      labelStyle: TextStyle(color: Colors.transparent),
+                      title: AxisTitle(text: 'Speed (Mbps)', textStyle: TextStyle(fontSize: 10, color: Colors.white)),
                     ),
                     legend: Legend(
                       isVisible: true,
                       position: LegendPosition.top,
-                      textStyle: TextStyle(fontSize: 10),
+                      
+                      textStyle: TextStyle(fontSize: 10, color: Colors.white),
                     ),
                     series: <CartesianSeries>[
                       LineSeries<SpeedData, int>(
@@ -104,7 +115,7 @@ class _SpeedTestScreenState extends State<SpeedTestScreen> {
                         dataSource: data,
                         xValueMapper: (SpeedData speed, _) => speed.time,
                         yValueMapper: (SpeedData speed, _) => speed.downloadSpeed,
-                        markerSettings: MarkerSettings(isVisible: true),
+                        markerSettings: MarkerSettings(isVisible: true,),
                         color: Colors.blue,
                       ),
                       LineSeries<SpeedData, int>(
@@ -141,7 +152,7 @@ class _SpeedTestScreenState extends State<SpeedTestScreen> {
           text: label,
           textSize: context.screenWidth < 850 ? 8 : 10,  // Adjust text size based on screen width
           fontWeight: FontWeight.bold,
-          textColor: Colors.black,
+          textColor: Colors.white,
         ),
         SizedBox(height: context.screenHeight * 0.01),  // Adjusted space between texts
         TextWidget(
