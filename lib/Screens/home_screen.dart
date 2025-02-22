@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:securetech_connect/Functions/decryption.dart';
 import 'package:securetech_connect/Widgets/button_widget.dart';
 import 'package:securetech_connect/Widgets/encryption.dart';
 import 'package:securetech_connect/Widgets/console_ui_widget.dart';
@@ -15,6 +18,7 @@ import 'package:securetech_connect/extension.dart';
 import 'package:securetech_connect/models/speed_model.dart';
 import 'package:securetech_connect/models/topbarmodel.dart';
 import 'package:system_info2/system_info2.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String extId = '';
   List<SpeedData> data = [];
   List<String> _texts = [];
+   
 
 
 
@@ -275,13 +280,61 @@ void _showTextSequentially() {
     });
   }
 
+Future<void> _pickFile(BuildContext context) async {
+  FilePickerResult? result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['server'], // Restrict to `.server` files
+  );
+  if(result == null) return;
+  print(result);
+    String filePath = result.files.single.path!;
+    _checkAuthorization(context, filePath); // ✅ Pass context explicitly
+}
+
+Future<void> _checkAuthorization(BuildContext context, String path) async {
+  if (!mounted) return; // ✅ Ensure the widget is still active
+
+  try {
+    File file = File(path);
+    String fileContent = await file.readAsString();
+
+    // 🔹 Search for Base64 encrypted text using regex
+    RegExp regex = RegExp(r'[A-Za-z0-9+/=]{20,}');
+    Match? match = regex.firstMatch(fileContent);
+
+    if (match != null) {
+      String encryptedText = match.group(0)!;
+      String decryptedText = decryptPassword(encryptedText);
+
+      bool isAuthorized = decryptedText.contains("this is an authorized");
+
+      // ✅ Use `mounted` to check before showing dialog
+      if (mounted) {
+        _showEncryptionDialog(context, isAuthorized, isAuthorized ? "Decryption Successful!" : "No Match Found!");
+      }
+    } else {
+      if (mounted) _showEncryptionDialog(context, false, "File is Not Authorized");
+    }
+  } catch (e) {
+    if (mounted) _showEncryptionDialog(context, false, "Error Reading File");
+  }
+}
+
+void _showEncryptionDialog(BuildContext context, bool isMatch, String message) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return EncryptionScreen(
+        text: message,
+        isMatch: isMatch, // ✅ Pass match status
+      );
+    },
+    barrierDismissible: false, // Prevent accidental closing
+  );
+}
 
 
-  // final key = encrypt.Key.fromUtf8('my32lengthsupersecretnooneknows1'); // 32 chars key
-  // final iv = encrypt.IV.fromUtf8('1234567890123456'); // 16 chars IV (Fixed)
-  // final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc, padding: 'PKCS7'));
-
-  // final encrypted = encrypter.encrypt(password, iv: iv);
+ 
 
 
   @override
@@ -432,8 +485,8 @@ void _showTextSequentially() {
                                                 ),
                                               ), 
                                               Flexible(child: 
-                                              AnimatedSubmitButton(onPressed: (){
-
+                                              AnimatedSubmitButton(onPressed: () async{
+                                              await _pickFile(context);
                                               }, 
                                               width: context.screenWidth,
                                               text: "Browse",

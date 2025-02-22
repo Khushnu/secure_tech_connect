@@ -7,7 +7,7 @@ import 'package:securetech_connect/Screens/login_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Size size = await DesktopWindow.getWindowSize();
-  const Size desiredSize = Size(1200, 950);
+  const Size desiredSize = Size(1100, 900);
   print(desiredSize);
   await DesktopWindow.setWindowSize(desiredSize);
 await DesktopWindow.setFullScreen(false);
